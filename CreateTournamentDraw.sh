@@ -13,27 +13,8 @@ N=0
 debug=0
 infile=""
 
-# function list array
-function ShowArray
-{
-  argArray=("${!2}")
-  for ((i = 0, j = 1; i < "$1"; i++, j++)); do
-    echo "$j: ${argArray[$i]}"
-  done
-}
-
-# compare two arrays
-function CompareArrays
-{
-  argArray1=("${!2}")
-  argArray2=("${!3}")
-  for ((i = 0, j = 1; i < $1; i++, j++))
-  {
-    [ "$debug" -ne 0 ] && echo "$j: '${argArray1[$i]}' '${argArray2[$i]}'"
-    [ "${argArray1[$i]}" == "${argArray2[$i]}" ] && return 1
-  }
-  return 0
-}
+# include functions
+source "./IncludeFunctions.sh"
 
 # main function
 while (( "$#" )); do

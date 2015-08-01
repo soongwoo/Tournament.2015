@@ -14,27 +14,8 @@ N=0
 debug=0
 infile=""
 
-# function list array
-function ShowArray
-{
-  argArray=("${!2}")
-  for ((i = 0; i < "$1"; i++)); do
-    echo "$i: ${argArray[$i]}"
-  done
-}
-
-# compare two arrays
-function CompareArrays
-{
-  argArray1=("${!2}")
-  argArray2=("${!3}")
-  for ((i = 0; i < $1; i++))
-  {
-    [ "$debug" -ne 0 ] && echo "$i: '${argArray1[$i]}' '${argArray2[$i]}'"
-    [ "${argArray1[$i]}" == "${argArray2[$i]}" ] && return 1
-  }
-  return 0
-}
+# include functions
+source "./IncludeFunctions.sh"
 
 # main function
 while (( "$#" )); do
@@ -84,7 +65,6 @@ mapfile -t applicants < "$infile"
 
 # shuffle the applicants
 shuffled_applicants=("${applicants[@]}")
-[ "$debug" -ne 0 ] && ShowArray "$total" "shuffled_applicants[@]"
 for ((loop = 1; loop; loop++))
 {
   # swap contents
@@ -101,6 +81,28 @@ for ((loop = 1; loop; loop++))
 }
 
 # check the number of loop
+ShowArrays "$total" "applicants[@]" "shuffled_applicants[@]"
 echo "Shuffle input $loop time(s)"
+
+# select N
+selected_applicants=("${shuffled_applicants[@]}")
+for ((loop = 1, i = 0; loop; loop++))
+{
+  x=`expr $RANDOM % $total`
+  [ -z "${shuffled_applicants[$x]}" ] && continue
+  selected_applicants[$i]="${shuffled_applicants[$x]}"
+  shuffled_applicants[$x]=""
+
+  (( i++ ))
+  [ $i -eq $N ] && break;
+}
+
+[ "$debug" -ne 0 ] && ShowArray "$total" "shuffled_applicants[@]"
+ShowArray "$N" "selected_applicants[@]"
+echo "Select $N in $loop time(s)"
+
+# dump the result in files
+DumpArray "GroupA" "$N" "selected_applicants[@]"
+DumpArray "GroupB" "$total" "shuffled_applicants[@]"
 
 exit 0
