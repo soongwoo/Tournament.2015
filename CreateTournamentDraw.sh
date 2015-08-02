@@ -48,16 +48,18 @@ done
 total=$(wc "$infile" | awk '{ print $1 }')
 
 # Do the task
-[ "$debug" -ne 0 ] && echo "infile=$infile total=$total"
+echo "'$infile': $total entries"
 
 # make a pivot array for applicants.
 mapfile -t applicants < "$infile"
 
 # shuffle the applicants
 shuffled_applicants=("${applicants[@]}")
-[ "$debug" -ne 0 ] && ShowArray "$total" "shuffled_applicants[@]"
 for ((loop = 1; loop; loop++))
 {
+  # show progress
+  printf "Shuffle the entries %d times\r" "$loop"
+
   # swap contents
   x=`expr $RANDOM % $total`
   y=`expr $RANDOM % $total`
@@ -73,9 +75,8 @@ for ((loop = 1; loop; loop++))
   CompareArrays "$total" "applicants[@]" "shuffled_applicants[@]"
   [ "$?" -eq 0 ] && break;
 }
-
-# check the number of loop
-echo "Shuffle input $loop time(s)"
+printf "Shuffle the entries %d times\n" "$loop"
+[ "$debug" -ne 0 ] && ShowArrays "$total" "applicants[@]" "shuffled_applicants[@]"
 
 # get the pivot number for tournament draw
 N=1
@@ -84,20 +85,26 @@ for ((drawTotal = 1; drawTotal < $total; drawTotal *= 2))
   (( N *= 2))
 }
 (( N /= 2 ))
-echo "N=$N total=$total drawTotal=$drawTotal"
+echo "Total entries=$total Draw Total=$drawTotal"
 
 # now, create a tournament draw.
 
 # select N applicants from shuffled applicants array
-for ((i = 0; i < $drawTotal; ))
+j=0
+for ((i = 0, loop = 1; i < $drawTotal; loop++))
 {
+  # show progress
+  printf "Select %d entries in %d times\r" "$j" "$loop"
+
   x=`expr $RANDOM % $total`
   [ -z "${shuffled_applicants[$x]}" ] && continue
-  [ "$debug" -ne 0 ] && echo "i=$i entry=${shuffled_applicants[$x]}"
+
+  (( j++ ))
   draw[ ((i++)) ]="${shuffled_applicants[$x]}"
   draw[ ((i++)) ]=""
   shuffled_applicants[$x]=""
 }
+printf "Select %d entries in %d times\n" "$j" "$loop"
 [ "$debug" -ne 0 ] && ShowArray "$drawTotal" "draw[@]"
 
 # now, fill the remaining
@@ -105,9 +112,11 @@ loop=0
 filled=0
 for ((i = 0; i < $total; i++))
 {
+  # show progress
+  printf "Fill %d entries in %d times\r" "$filled" "$loop"
+
   # already picked?
   [ -z "${shuffled_applicants[$i]}" ] && continue;
-  [ "$debug" -ne 0 ] && echo "${shuffled_applicants[$i]}"
 
   # get an empty draw
   x=0
@@ -115,9 +124,12 @@ for ((i = 0; i < $total; i++))
   {
     x=`expr $RANDOM % $drawTotal`	# the index in draw
 
+    # show progress
+    (( loop++ ))
+    printf "Fill %d entries in %d times\r" "$filled" "$loop"
+
     # occupied?
     [ ! -z "${draw[$x]}" ] && continue;
-    [ "$debug" -ne 0 ] && echo "x=$x ${draw[$x]}"
 
     # alternate the sides
     if [ `expr $filled % 2` -eq 0 ]; then
@@ -128,7 +140,6 @@ for ((i = 0; i < $total; i++))
 
     break;
   }
-  (( loop += j ))
 
   # fill it
   draw[$x]="${shuffled_applicants[$i]}"
@@ -137,9 +148,8 @@ for ((i = 0; i < $total; i++))
 }
 
 # check the number of loop
+printf "Fill %d entries in %d times\n" "$filled" "$loop"
 ShowArray "$drawTotal" "draw[@]"
 DumpDraw "Draw.2015.txt" "$drawTotal" "draw[@]"
-echo "total=$total filled=$filled"
-echo "Complete the draw in $loop time(s)"
 
 exit 0

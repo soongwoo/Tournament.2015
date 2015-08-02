@@ -57,8 +57,7 @@ total=$(wc "$infile" | awk '{ print $1 }')
 [ "$total" -le "$N" ] && echo "N($N) is larger than the total($total)." && exit 3
 
 # Do the task
-[ "$debug" -ne 0 ] && echo "infile=$infile"
-[ "$debug" -ne 0 ] && echo "Total=$total N=$N"
+echo "'$infile': Select $N from $total entries"
 
 # make a pivot array for applicants.
 mapfile -t applicants < "$infile"
@@ -67,6 +66,9 @@ mapfile -t applicants < "$infile"
 shuffled_applicants=("${applicants[@]}")
 for ((loop = 1; loop; loop++))
 {
+  # show progress
+  printf "Shuffle the entries %d times\r" "$loop"
+
   # swap contents
   x=`expr $RANDOM % $total`
   y=`expr $RANDOM % $total`
@@ -79,27 +81,27 @@ for ((loop = 1; loop; loop++))
   CompareArrays "$total" "applicants[@]" "shuffled_applicants[@]"
   [ "$?" -eq 0 ] && break;
 }
-
-# check the number of loop
-ShowArrays "$total" "applicants[@]" "shuffled_applicants[@]"
-echo "Shuffle input $loop time(s)"
+printf "Shuffle the entries %d times\n" "$loop"
+[ "$debug" -ne 0 ] && ShowArrays "$total" "applicants[@]" "shuffled_applicants[@]"
 
 # select N
 selected_applicants=("${shuffled_applicants[@]}")
-for ((loop = 1, i = 0; loop; loop++))
+for ((i = 0, loop = 1; i < $N; loop++))
 {
+  # show progress
+  printf "Select %d entries in %d times\r" "$i" "$loop"
+
   x=`expr $RANDOM % $total`
   [ -z "${shuffled_applicants[$x]}" ] && continue
   selected_applicants[$i]="${shuffled_applicants[$x]}"
   shuffled_applicants[$x]=""
 
   (( i++ ))
-  [ $i -eq $N ] && break;
 }
+printf "Select %d entries in %d times\n" "$i" "$loop"
 
 [ "$debug" -ne 0 ] && ShowArray "$total" "shuffled_applicants[@]"
 ShowArray "$N" "selected_applicants[@]"
-echo "Select $N in $loop time(s)"
 
 # dump the result in files
 DumpArray "GroupA" "$N" "selected_applicants[@]"
