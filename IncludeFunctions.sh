@@ -6,9 +6,10 @@
 function ShowArray
 {
   argArray=("${!2}")
-  for ((i = 0; i < "$1"; i++)); do
-    echo "$i: ${argArray[$i]}"
-  done
+  for ((i = 0, j = 1; i < "$1"; i++, j++))
+  {
+    printf "%2d: %s\n" "$j" "${argArray[$i]}"
+  }
 }
 
 # compare two arrays
@@ -28,9 +29,9 @@ function ShowArrays
 {
   argArray1=("${!2}")
   argArray2=("${!3}")
-  for ((i = 0; i < $1; i++))
+  for ((i = 0, j = 1; i < "$1"; i++, j++))
   {
-    echo "$i: '${argArray1[$i]}' '${argArray2[$i]}'"
+    printf "%2d: %s %s\n" "$j" "'${argArray1[$i]}'" "'${argArray2[$i]}'"
   }
   return 0
 }
@@ -40,13 +41,12 @@ function DumpArray
 {
   echo -n "" > "$1"
   argArray=("${!3}")
-  for ((i = 0; i < "$2"; i++)); do
+  for ((i = 0; i < "$2"; i++))
   {
     if [ ! -z "${argArray[$i]}" ]; then
       echo "${argArray[$i]}" >> "$1"
     fi
   }
-  done
 }
 
 # function list array
@@ -54,9 +54,8 @@ function DumpDraw
 {
   echo -n "" > "$1"
   argArray=("${!3}")
-  for ((i = 0, j = 1; i < "$2"; i++, j++)); do
+  for ((i = 0, j = 1; i < "$2"; i++, j++))
   {
-    printf "%02d: %s\n" "$j" "${argArray[$i]}" >> "$1"
+    printf "%2d: %s\n" "$j" "${argArray[$i]}" >> "$1"
   }
-  done
 }
