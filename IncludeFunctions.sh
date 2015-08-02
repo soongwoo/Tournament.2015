@@ -48,3 +48,15 @@ function DumpArray
   }
   done
 }
+
+# function list array
+function DumpDraw
+{
+  echo -n "" > "$1"
+  argArray=("${!3}")
+  for ((i = 0, j = 1; i < "$2"; i++, j++)); do
+  {
+    printf "%02d: %s\n" "$j" "${argArray[$i]}" >> "$1"
+  }
+  done
+}

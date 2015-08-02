@@ -84,7 +84,7 @@ for ((drawTotal = 1; drawTotal < $total; drawTotal *= 2))
   (( N *= 2))
 }
 (( N /= 2 ))
-[ "$debug" -ne 0 ] && echo "N=$N total=$total drawTotal=$drawTotal"
+echo "N=$N total=$total drawTotal=$drawTotal"
 
 # now, create a tournament draw.
 
@@ -116,7 +116,7 @@ for ((i = 0; i < $total; i++))
     x=`expr $RANDOM % $drawTotal`	# the index in draw
 
     # occupied?
-    [ ! -z "${draw[$x]}" ] && echo "x=$x" && continue;
+    [ ! -z "${draw[$x]}" ] && continue;
     [ "$debug" -ne 0 ] && echo "x=$x ${draw[$x]}"
 
     # alternate the sides
@@ -137,8 +137,9 @@ for ((i = 0; i < $total; i++))
 }
 
 # check the number of loop
-[ "$debug" -ne 0 ] && ShowArray "$drawTotal" "draw[@]"
-[ "$debug" -ne 0 ] && echo "total=$total filled=$filled"
+ShowArray "$drawTotal" "draw[@]"
+DumpDraw "Draw.2015.txt" "$drawTotal" "draw[@]"
+echo "total=$total filled=$filled"
 echo "Complete the draw in $loop time(s)"
 
 exit 0
