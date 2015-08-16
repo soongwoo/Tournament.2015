@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Revision
+# 1.1
+# - avoid same group in every 4 slots
+# - avoid same group to fill the remaining
+
+# Further changes
+# - seed entries: handle it with external file
+# - entry file shuffle: need some idea
+
 # create a tournament draw from the given applicants file.
 
 OPTION="[-debug=0]"
@@ -200,5 +209,6 @@ for ((i = 0; i < $total; i++))
 printf "Fill %d entries in %d times\n" "$filled" "$loop"
 ShowArray "$drawTotal" "draw[@]"
 DumpDraw "Draw.2015.txt" "$drawTotal" "draw[@]"
+echo "'$infile': $total (${N_entries[@]}) entries"
 
 exit 0
