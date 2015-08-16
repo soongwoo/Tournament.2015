@@ -13,6 +13,12 @@ N=0
 debug=0
 infile=""
 
+GRP_N=" N "
+GRP_S=" S "
+GRP_D=" D "
+
+N_entries=(0 0 0)	# number of entries for Group_N, Group_S and Group_D
+
 # include functions
 source "./IncludeFunctions.sh"
 
@@ -46,9 +52,12 @@ done
 
 # total number of applicants
 total=$(wc "$infile" | awk '{ print $1 }')
+N_entries[0]=$(CountGroupEntries "$infile" "$GRP_N")
+N_entries[1]=$(CountGroupEntries "$infile" "$GRP_S")
+N_entries[2]=$(CountGroupEntries "$infile" "$GRP_D")
 
 # Do the task
-echo "'$infile': $total entries"
+echo "'$infile': $total (${N_entries[@]}) entries"
 
 # make a pivot array for applicants.
 mapfile -t applicants < "$infile"
@@ -91,6 +100,7 @@ echo "Total entries=$total Draw Total=$drawTotal"
 
 # select N applicants from shuffled applicants array
 j=0
+samegrp=0
 for ((i = 0, loop = 1; i < $drawTotal; loop++))
 {
   # show progress
@@ -99,10 +109,30 @@ for ((i = 0, loop = 1; i < $drawTotal; loop++))
   x=`expr $RANDOM % $total`
   [ -z "${shuffled_applicants[$x]}" ] && continue
 
+  # do not put same group members in every 4 slots.
+  entry="${shuffled_applicants[$x]}"
+  ID=$(GroupID "$entry")
+  if [ `expr $i % 4` -ne 0 ]; then
+    left=$(CountOtherGroupEntries "N_entries[@]" $ID)
+    if [ $lastID -eq $ID -a "$left" != "0" ]; then
+      (( samegrp++ ))
+      continue
+    fi
+  else
+    lastID=-1
+    samegrp=0
+  fi
+
   (( j++ ))
   draw[ ((i++)) ]="${shuffled_applicants[$x]}"
   draw[ ((i++)) ]=""
   shuffled_applicants[$x]=""
+
+  N_entries[$ID]=`expr ${N_entries[$ID]} - 1`
+  [ "$debug" -ne 0 ] && printf "Select %d entries in %d times\n" "$j" "$loop"
+  [ "$debug" -ne 0 ] && echo "$entry $ID($lastID)=${N_entries[ID]} same group=$samegrp"
+  lastID=$ID
+ 
 }
 printf "Select %d entries in %d times\n" "$j" "$loop"
 [ "$debug" -ne 0 ] && ShowArray "$drawTotal" "draw[@]"
@@ -117,9 +147,12 @@ for ((i = 0; i < $total; i++))
 
   # already picked?
   [ -z "${shuffled_applicants[$i]}" ] && continue;
+  entry="${shuffled_applicants[$i]}"
+  ID=$(GroupID "$entry")
 
   # get an empty draw
   x=0
+  samegrp=0
   for ((j = 1; j; j++))
   {
     x=`expr $RANDOM % $drawTotal`	# the index in draw
@@ -138,13 +171,29 @@ for ((i = 0; i < $total; i++))
        [ $x -lt $N ] && continue;
     fi
 
-    break;
+    # avoid same group
+    y=`expr $x - 1`
+    oppID=$(GroupID "${draw[$y]}")
+    if [ $oppID != $ID ]; then
+      break;
+    else
+      left=$(CountOtherGroupEntries "N_entries[@]" $ID)
+      if [ "$left" == "0" ]; then
+        break
+      else
+        (( samegrp++ ))
+      fi
+    fi
   }
 
   # fill it
   draw[$x]="${shuffled_applicants[$i]}"
   shuffled_applicants[$i]=""
   (( filled++ ))
+
+  N_entries[$ID]=`expr ${N_entries[$ID]} - 1`
+  [ "$debug" -ne 0 ] && printf "Fill %d entries in %d times\r" "$filled" "$loop"
+  [ "$debug" -ne 0 ] && echo "$entry $ID($oppID)=${N_entries[ID]} same group=$samegrp"
 }
 
 # check the number of loop

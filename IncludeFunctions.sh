@@ -59,3 +59,47 @@ function DumpDraw
     printf "%2d: %s\n" "$j" "${argArray[$i]}" >> "$1"
   }
 }
+
+# group relasted functions
+
+# variables
+GRP_N=" N "
+GRP_S=" S "
+GRP_D=" D "
+
+# count # of group entries in the given file.
+function CountGroupEntries
+{
+  n=$(grep "$2" "$1" | wc | awk '{ print $1 }')
+  echo "$n"
+}
+
+# count # of group entries in the given file.
+function CountOtherGroupEntries
+{
+  argArray=("${!1}")
+  echo; echo "second arg=$2"; echo
+  for ((i = 0, n = 0; i < 3; i++))
+  {
+    if [ $i -ne $2 ]; then
+      n=`expr $n + ${argArray[$i]}`
+    fi
+  }
+  echo "$n"
+}
+
+# identify group ID
+function GroupID
+{
+  str=${1/$GRP_N/};
+  if [ "$str" != "$1" ]; then
+    echo "0"	# Group N
+  else
+    str=${1/$GRP_S/};
+    if [ "$str" != "$1" ]; then
+      echo "1"	# Group S
+    else
+      echo "2"	# Group D
+    fi
+  fi
+}
