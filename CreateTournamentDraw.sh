@@ -187,12 +187,11 @@ for ((i = 0, loop = 1; i < $drawTotal; loop++))
   x=`expr $RANDOM % $total`
   [ -z "${shuffled_applicants[$x]}" ] && continue
   if [ "${Draw[$i]}" != "0" ]; then
-    lastID=-1
+    lastID=$(GroupID "${Draw[$i]}")
     samegrp=0
     (( j++ ))
     (( i++ ))		# a seeder is assigned
     Draw[ ((i++)) ]=""
-    lastID=$(GroupID "${Draw[$i]}")
     continue
   fi
 
