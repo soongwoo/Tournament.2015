@@ -6,7 +6,7 @@
 function ShowArray
 {
   argArray=("${!2}")
-  for ((i = 0, j = 1; i < "$1"; i++, j++))
+  for ((i = 0, j = 1; i < $1; i++, j++))
   {
     printf "%2d: %s\n" "$j" "${argArray[$i]}"
   }
@@ -29,7 +29,7 @@ function ShowArrays
 {
   argArray1=("${!2}")
   argArray2=("${!3}")
-  for ((i = 0, j = 1; i < "$1"; i++, j++))
+  for ((i = 0, j = 1; i < $1; i++, j++))
   {
     printf "%2d: %s %s\n" "$j" "'${argArray1[$i]}'" "'${argArray2[$i]}'"
   }
@@ -41,7 +41,7 @@ function DumpArray
 {
   echo -n "" > "$1"
   argArray=("${!3}")
-  for ((i = 0; i < "$2"; i++))
+  for ((i = 0; i < $2; i++))
   {
     if [ ! -z "${argArray[$i]}" ]; then
       echo "${argArray[$i]}" >> "$1"
@@ -54,7 +54,7 @@ function DumpDraw
 {
   echo -n "" > "$1"
   argArray=("${!3}")
-  for ((i = 0, j = 1; i < "$2"; i++, j++))
+  for ((i = 0, j = 1; i < $2; i++, j++))
   {
     printf "%2d: %s\n" "$j" "${argArray[$i]}" >> "$1"
   }
@@ -135,48 +135,4 @@ function GetLeap
     [ "$n" == "1" ] && n=-1
   }
   echo "$n"
-}
-
-# make a draw with seeders
-function MakeSeedDraw
-{
-  argArray=("${!1}")
-  drawTotal=$2
-  N=`expr $drawTotal / 2`
-
-  # initialize Draw array
-  for ((i = 0; i < $drawTotal; i++))
-  {
-    argArray[$i]=0;
-  }
-
-  # fill the draw with seeders
-  leap=0	# jump to
-  last=0;	# last index
-  lastN=$N;	# magic
-  for ((i = 0, j = 1; i < $N; i++, j++))
-  {
-    idx=`expr $last + $leap`
-    (( idx %= $drawTotal ))
-    argArray[$idx]="$j"
-    (( k = $idx + 1 ))
-    argArray[$k]=`expr $drawTotal - $j + 1`
-
-    if [ `expr $j % 2` -eq 1 ]; then
-      leap=$N
-    else
-      result=$(IsPower2 $j)
-      if [ "$result" == "1" ]; then
-        (( lastN /= 2 ))
-        leap=$lastN
-      else
-        if [ `expr $idx - $N` -ge 0 ]; then
-          leap=$(GetLeap "argArray[@]" $idx $drawTotal `expr $N / 2`)
-        else
-          leap=$(GetLeap "argArray[@]" $idx $N `expr $N / 2`)
-        fi
-      fi
-    fi
-    last=$idx
-  }
 }

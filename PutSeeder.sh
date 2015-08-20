@@ -57,9 +57,9 @@ for ((i = 0; i < $drawTotal; i++))
 }
 
 # fill the draw with seeders
-leap=0	# jump to
-last=0;	# last index
-lastN=$N;	# magic
+leap=0		# jump to
+last=0		# last index
+lastN=$N	# magic
 for ((i = 0, j = 1; i < $N; i++, j++))
 {
   idx=`expr $last + $leap`

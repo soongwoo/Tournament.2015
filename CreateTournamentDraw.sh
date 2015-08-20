@@ -19,6 +19,7 @@ USAGE="Usage: $0 applicants-list-file"
 
 # initialize variables
 N=0
+seed=0
 debug=0
 infile=""
 seedfile=""
@@ -108,23 +109,71 @@ for ((drawTotal = 1; drawTotal < $total; drawTotal *= 2))
 
 # now, if there is a seed file, adjust tournament size.
 if [ ! -z "$seedfile" ]; then
-  n_seed=$(wc "$seedfile" | awk '{ print $1 }')
-  if [ `expr $n_seed + $total` -gt $drawTotal ]; then
+  # make an array for seeders
+  mapfile -t Seeders < "$seedfile"
+
+  seed=$(wc "$seedfile" | awk '{ print $1 }')
+  if [ `expr $seed + $total` -gt $drawTotal ]; then
     (( drawTotal *= 2))
     (( N *= 2))
   fi
 fi
 
-echo "Total entries=$total Draw Total=$drawTotal"
+echo "Total entries=$total Draw Total=$drawTotal Seed Total=$seed"
 
 # now, create a tournament draw.
 
+# initialize Draw array
+for ((i = 0; i < $drawTotal; i++))
+{
+  Draw[$i]=0;
+}
+
 # now, if there is a seed file, put seeder(s) first.
 if [ ! -z "$seedfile" ]; then
-  n_seed=$(wc "$seedfile" | awk '{ print $1 }')
-  for ((i = 0; i < $n_seed; i++))
+
+  # fill the draw with seeders
+  leap=0		# jump to
+  last=0		# last index
+  lastN=$N	# magic
+  for ((i = 0, j = 1; i < $N; i++, j++))
   {
+    idx=`expr $last + $leap`
+    (( idx %= $drawTotal ))
+    Draw[$idx]="$j"
+    (( k = $idx + 1 ))
+    Draw[$k]=`expr $drawTotal - $j + 1`
+
+    if [ `expr $j % 2` -eq 1 ]; then
+      leap=$N
+    else
+      result=$(IsPower2 $j)
+      if [ "$result" == "1" ]; then
+        (( lastN /= 2 ))
+        leap=$lastN
+      else
+        if [ `expr $idx - $N` -ge 0 ]; then
+          leap=$(GetLeap "Draw[@]" $idx $drawTotal `expr $N / 2`)
+        else
+          leap=$(GetLeap "Draw[@]" $idx $N `expr $N / 2`)
+        fi
+      fi
+    fi
+    last=$idx
   }
+  [ "$debug" -ne 0 ] && echo "* Seed" && ShowArray "$drawTotal" "Draw[@]" 
+
+  # now, leave the requested seeders only
+  for ((i = 0; i < $drawTotal; i++))
+  {
+    if [ `expr "${Draw[$i]}" - $seed` -gt 0 ]; then
+      Draw[$i]=0
+    else
+      j=${Draw[$i]}
+      Draw[$i]=${Seeders[`expr $j - 1`]}
+    fi
+  }
+  [ "$debug" -ne 0 ] && echo "* $seed Draw" && ShowArray "$drawTotal" "Draw[@]" 
 fi
 
 # select N applicants from shuffled applicants array
@@ -137,6 +186,15 @@ for ((i = 0, loop = 1; i < $drawTotal; loop++))
 
   x=`expr $RANDOM % $total`
   [ -z "${shuffled_applicants[$x]}" ] && continue
+  if [ "${Draw[$i]}" != "0" ]; then
+    lastID=-1
+    samegrp=0
+    (( j++ ))
+    (( i++ ))		# a seeder is assigned
+    Draw[ ((i++)) ]=""
+    lastID=$(GroupID "${Draw[$i]}")
+    continue
+  fi
 
   # do not put same group members in every 4 slots.
   entry="${shuffled_applicants[$x]}"
@@ -153,8 +211,8 @@ for ((i = 0, loop = 1; i < $drawTotal; loop++))
   fi
 
   (( j++ ))
-  draw[ ((i++)) ]="${shuffled_applicants[$x]}"
-  draw[ ((i++)) ]=""
+  Draw[ ((i++)) ]="${shuffled_applicants[$x]}"
+  Draw[ ((i++)) ]=""
   shuffled_applicants[$x]=""
 
   N_entries[$ID]=`expr ${N_entries[$ID]} - 1`
@@ -164,7 +222,7 @@ for ((i = 0, loop = 1; i < $drawTotal; loop++))
  
 }
 printf "Select %d entries in %d times\n" "$j" "$loop"
-[ "$debug" -ne 0 ] && ShowArray "$drawTotal" "draw[@]"
+[ "$debug" -ne 0 ] && ShowArray "$drawTotal" "Draw[@]"
 
 # now, fill the remaining
 loop=0
@@ -191,7 +249,7 @@ for ((i = 0; i < $total; i++))
     printf "Fill %d entries in %d times\r" "$filled" "$loop"
 
     # occupied?
-    [ ! -z "${draw[$x]}" ] && continue;
+    [ ! -z "${Draw[$x]}" ] && continue;
 
     # alternate the sides
     if [ `expr $filled % 2` -eq 0 ]; then
@@ -202,7 +260,7 @@ for ((i = 0; i < $total; i++))
 
     # avoid same group
     y=`expr $x - 1`
-    oppID=$(GroupID "${draw[$y]}")
+    oppID=$(GroupID "${Draw[$y]}")
     if [ $oppID != $ID ]; then
       break;
     else
@@ -216,7 +274,7 @@ for ((i = 0; i < $total; i++))
   }
 
   # fill it
-  draw[$x]="${shuffled_applicants[$i]}"
+  Draw[$x]="${shuffled_applicants[$i]}"
   shuffled_applicants[$i]=""
   (( filled++ ))
 
@@ -227,8 +285,8 @@ for ((i = 0; i < $total; i++))
 
 # check the number of loop
 printf "Fill %d entries in %d times\n" "$filled" "$loop"
-ShowArray "$drawTotal" "draw[@]"
-DumpDraw "Draw.2015.txt" "$drawTotal" "draw[@]"
+ShowArray "$drawTotal" "Draw[@]"
+DumpDraw "Draw.2015.txt" "$drawTotal" "Draw[@]"
 echo "'$infile': $total (${N_entries[@]}) entries"
 
 exit 0
