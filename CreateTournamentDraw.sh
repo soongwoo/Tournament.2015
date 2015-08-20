@@ -11,7 +11,7 @@
 
 # create a tournament draw from the given applicants file.
 
-OPTION="[-debug=0]"
+OPTION="[-debug=0] [-seedfile=seed.txt]"
 USAGE="Usage: $0 applicants-list-file"
 
 # check the number of argument
@@ -21,6 +21,7 @@ USAGE="Usage: $0 applicants-list-file"
 N=0
 debug=0
 infile=""
+seedfile=""
 
 GRP_N=" N "
 GRP_S=" S "
@@ -58,6 +59,7 @@ done
 
 # check applicant file and number
 [ -z "$infile" ] && echo "No Applicants list file" && exit 1
+[ ! -z "$seedfile" -a ! -e "$seedfile" ] && echo "'$seedfile': not found" && exit 2
 
 # total number of applicants
 total=$(wc "$infile" | awk '{ print $1 }')
@@ -103,9 +105,27 @@ for ((drawTotal = 1; drawTotal < $total; drawTotal *= 2))
   (( N *= 2))
 }
 (( N /= 2 ))
+
+# now, if there is a seed file, adjust tournament size.
+if [ ! -z "$seedfile" ]; then
+  n_seed=$(wc "$seedfile" | awk '{ print $1 }')
+  if [ `expr $n_seed + $total` -gt $drawTotal ]; then
+    (( drawTotal *= 2))
+    (( N *= 2))
+  fi
+fi
+
 echo "Total entries=$total Draw Total=$drawTotal"
 
 # now, create a tournament draw.
+
+# now, if there is a seed file, put seeder(s) first.
+if [ ! -z "$seedfile" ]; then
+  n_seed=$(wc "$seedfile" | awk '{ print $1 }')
+  for ((i = 0; i < $n_seed; i++))
+  {
+  }
+fi
 
 # select N applicants from shuffled applicants array
 j=0
