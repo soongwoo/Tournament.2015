@@ -59,10 +59,10 @@ echo
 
 # show the result line by line
 nth=1
-cat "$OUTPUT" | while read old_entry; do
+cat "$OUTPUT" | while read new_entry; do
   i=1
-  cat "$entryfile" | while read new_entry; do
-    [ `expr $i - $nth` -eq 0 ] && printf "%2d: %s <= %s\n" "$nth" "$old_entry" "$new_entry" && break
+  cat "$entryfile" | while read old_entry; do
+    [ `expr $i - $nth` -eq 0 ] && printf "%2d: %s >= %s\n" "$nth" "$old_entry" "$new_entry" && break
     (( i++ ))
   done
   (( nth++ ))
